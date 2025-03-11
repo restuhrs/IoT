@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../TransaksiSensor"
+		},
+		{
+			"name": "wokwi_internet",
+			"path": "."
+		}
+	],
+	"settings": {}
+}
