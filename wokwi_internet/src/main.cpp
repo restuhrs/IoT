@@ -6,17 +6,11 @@
 // const char* ssid = "Lab IT";
 // const char* password = "labit2024";
 
-
-
-
  const char* ssid = "Wokwi-GUEST";
  const char* password = "";
 
-
-
-
 // URL lengkap server yang akan diakses
-const char* serverUrl = "http://54b3-2404-c0-9c90-00-499d-7a18.ngrok-free.app/api/posts";
+const char* serverUrl = "http://adcb-120-188-86-244.ngrok-free.app/api/posts";
 
 
 // Interval waktu antara setiap permintaan (dalam milidetik)
@@ -37,7 +31,15 @@ void setup() {
   Serial.println(" Terhubung!");
 }
 
+
+
+
+
+
 void loop() {
+
+
+
 
   unsigned long currentMillis = millis();
 
