@@ -1,75 +1,115 @@
+#include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 
 
-// Ganti dengan kredensial jaringan Wi-Fi Anda
-// const char* ssid = "Lab IT";
-// const char* password = "labit2024";
+#include "DHT.h"
 
- const char* ssid = "Wokwi-GUEST";
- const char* password = "";
+#define DHTPIN 27    
+#define DHTTYPE DHT22  
 
-// URL lengkap server yang akan diakses
-const char* serverUrl = "http://adcb-120-188-86-244.ngrok-free.app/api/posts";
+DHT dht(DHTPIN, DHTTYPE);
 
 
-// Interval waktu antara setiap permintaan (dalam milidetik)
-const unsigned long interval = 5000;
+// Ganti dengan kredensial WiFi Anda
+const char* ssid = "Wokwi-GUEST";
+const char* password = "";
+
+
 unsigned long previousMillis = 0;
+const long interval = 5000;  // Interval 5 detik (5000 ms)
 
 
 void setup() {
   Serial.begin(115200);
+ 
+  // Hubungkan ke WiFi
   WiFi.begin(ssid, password);
-
-
-  Serial.print("Menghubungkan ke WiFi...");
+  Serial.print("Menghubungkan ke WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
   Serial.println(" Terhubung!");
+
+
+
+
+
+
+
+
+  dht.begin();
+ 
+  // Tunggu sebentar agar koneksi stabil
+  delay(1000);
 }
 
 
-
-
-
-
 void loop() {
-
-
-
-
   unsigned long currentMillis = millis();
 
 
-  // Periksa apakah interval waktu telah berlalu
+  // Lakukan POST setiap interval yang telah ditentukan
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
 
 
-    if (WiFi.status() == WL_CONNECTED) {
-      HTTPClient http;
-
-
-      // Inisialisasi HTTPClient dengan URL server
-      http.begin(serverUrl);
-
-
-      // Mengirim permintaan HTTP GET
-      int httpResponseCode = http.GET();
-
-
-      // Menampilkan kode status HTTP
-      Serial.print("Kode status HTTP: ");
-      Serial.println(httpResponseCode);
-
-
-      // Menutup koneksi
-      http.end();
-    } else {
-      Serial.println("WiFi tidak terhubung.");
+    float h = round(dht.readHumidity());
+    // Read temperature as Celsius (the default)
+    float t = round(dht.readTemperature());
+ 
+ 
+    // Check if any reads failed and exit early (to try again).
+    if (isnan(h) || isnan(t)) {
+      Serial.println(F("Failed to read from DHT sensor!"));
+      return;
     }
+ 
+
+
+    // Compute heat index in Celsius (isFahreheit = false)
+    float hic = dht.computeHeatIndex(t, h, false);
+
+
+
+
+    // Inisialisasi HTTPClient
+    HTTPClient http;
+    String url = "http://9578-2404-c0-9c90-00-4a88-f12e.ngrok-free.app/api/posts"; // Ganti dengan URL ngrok yang benar
+
+
+    http.begin(url);  // Menggunakan HTTP, bukan HTTPS
+    http.addHeader("Content-Type", "application/json");
+
+
+
+
+String payload = "{\"nama_sensor\":\"Sensor GD\", \"nilai1\":" + String(h) + ", \"nilai2\":" + String(t) + "}";
+
+
+Serial.println(payload);  // Untuk melihat apakah payload sudah terbentuk dengan benar
+
+
+    // Kirim POST request
+    int httpResponseCode = http.POST(payload);
+   
+    // Tampilkan kode respons HTTP
+    Serial.print("Kode respons HTTP: ");
+    Serial.println(httpResponseCode);
+
+
+    // Tampilkan respons dari server jika request berhasil
+    if (httpResponseCode == 200 || httpResponseCode == 201) {
+      String response = http.getString();
+      Serial.println("Respons dari server:");
+      Serial.println(response);
+    } else {
+      Serial.println("Gagal mengirim data");
+    }
+
+
+    // Tutup koneksi HTTP
+    http.end();
   }
 }
